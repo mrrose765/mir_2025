@@ -332,7 +332,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -375,34 +375,101 @@ class Ui_MainWindow(object):
         self.charger_desc.setText(_translate("MainWindow", "Charger descripteurs"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_rech), _translate("MainWindow", "Recherche"))
 
+        # Liens des boutons pour indexation
         self.charger.clicked.connect(self.Ouvrir_index)
+        self.quitter.clicked.connect(self.Quitter)
+        self.tableView.clicked.connect(self.CliquerTab)
+        self.indexer.clicked.connect(self.extractFeatures)
+
+        #Liens des boutons pour recherche
+        self.quitter_rech.clicked.connect(self.Quitter)
 
     def Ouvrir_index(self, MainWindow):
+        """Fonction pour ouvrir un explorateur de fichiers et charger les images"""
         self.list_images_index = []
         self.Dossier_images_index = QtWidgets.QFileDialog.getExistingDirectory(None, 'Select directory', "C://", QtWidgets.QFileDialog.ShowDirsOnly)+"/"
-        for i in range(len(os.listdir(self.Dossier_images_index))):
-            self.filenames_index = self.Dossier_images_index + str(os.listdir(self.Dossier_images_index)[i])
-            self.list_images_index.append(self.filenames_index)
 
-        pixmap = QtGui.QPixmap(self.list_images_index[0])
-        pixmap = pixmap.scaled(self.image.width(), self.image.height(), QtCore.Qt.KeepAspectRatio)
-        self.image.setPixmap(pixmap)
-        self.image.setAlignment(QtCore.Qt.AlignCenter)
+        extensions_images = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff')
+        for root, dirs, files in os.walk(self.Dossier_images_index):
+            for file in files:
+                if file.lower().endswith(extensions_images):
+                    chemin_complet = os.path.join(root, file)
+                    self.list_images_index.append(chemin_complet)
+
+        # Affichage de la première image
+        if self.list_images_index:
+            pixmap = QtGui.QPixmap(self.list_images_index[0])
+            pixmap = pixmap.scaled(self.image.width(), self.image.height(), QtCore.Qt.KeepAspectRatio)
+            self.image.setPixmap(pixmap)
+            self.image.setAlignment(QtCore.Qt.AlignCenter)
+
+        # Remplir le tableView avec les noms de fichiers
         model = QtGui.QStandardItemModel()
-        headerNames = []
-        headerNames.append("File name")
-        model.setHorizontalHeaderLabels(headerNames)
-        #Afficher la liste d'images dans le tableView
-        for i in range(len(self.list_images)):
-            row = []
-            first = self.list_images[i] #chemin complet
-            second = os.path.basename(self.list_images[i]) #juste le nom du fichier
-            item = QtGui.QStandardItem(first)
+        model.setHorizontalHeaderLabels(["File name"])
+
+        for chemin_image in self.list_images_index:
+            nom_fichier = os.path.basename(chemin_image)
+            item = QtGui.QStandardItem(nom_fichier)  
             item.setEditable(False)
-            row.append(item)
-            model.setColumnCount(1)
-            model.appendRow(row)
+            item.setData(chemin_image, QtCore.Qt.UserRole)
+            model.appendRow([item])
+
         self.tableView.setModel(model)
+
+    def Quitter(self):
+        """ Fonction pour quitter l'application """
+        print("Fermeture de l'application...")
+        QtWidgets.QApplication.instance().quit()
+
+    def CliquerTab(self, MainWindow):
+        index = self.tableView.selectionModel().currentIndex()
+        chemin_complet = index.data(QtCore.Qt.UserRole)  # Récupère le chemin complet
+        if chemin_complet and os.path.exists(chemin_complet):
+            pixmap = QtGui.QPixmap(chemin_complet)
+            pixmap = pixmap.scaled(self.image.width(), self.image.height(), QtCore.Qt.KeepAspectRatio)
+            self.image.setPixmap(pixmap)
+            self.image.setAlignment(QtCore.Qt.AlignCenter)
+
+    def extractFeatures(self, MainWindow):
+        # Vérifie que des images sont bien chargées
+        if not hasattr(self, 'list_images_index') or len(self.list_images_index) < 1:
+            print("Merci de charger la base de données avec le bouton Ouvrir")
+            return
+
+        # Vérifie que l'utilisateur a coché au moins un descripteur
+        if not (self.checkBox_HistC_index.isChecked() or self.checkBox_HSV_index.isChecked() or 
+                self.checkBox_SIFT_index.isChecked() or self.checkBox_ORB_index.isChecked() or 
+                self.checkBox_GLCM_index.isChecked() or self.checkBox_LBP_index.isChecked() or
+                self.checkBox_HOG_index.isChecked()):
+            print("Merci de sélectionner un descripteur via le menu ...")
+            f.showDialog()
+            return
+
+        # Exécute les descripteurs cochés
+        if self.checkBox_HistC_index.isChecked():
+            f.generateHistogramme_Color(self.list_images_index, self.progressBar)
+
+        if self.checkBox_HSV_index.isChecked():
+            f.generateHistogramme_HSV(self.list_images_index, self.progressBar)
+
+        if self.checkBox_SIFT_index.isChecked():
+            f.generateSIFT(self.list_images_index, self.progressBar)
+
+        if self.checkBox_ORB_index.isChecked():
+            f.generateORB(self.list_images_index, self.progressBar)
+
+        if self.checkBox_GLCM_index.isChecked():
+            f.generateGLCM(self.list_images_index, self.progressBar)
+
+        if self.checkBox_LBP_index.isChecked():
+            f.generateLBP(self.list_images_index, self.progressBar)
+
+        if self.checkBox_HOG_index.isChecked():
+            f.generateHOG(self.list_images_index, self.progressBar)
+
+        print("Indexation terminée.")
+
+    
 
 
 if __name__ == "__main__":
