@@ -10,6 +10,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 import os
 import functions as f
+import time
+import numpy as np
+import math
+import cv2
+import distances as d
+import fnmatch
+
+filenames= "imgDB"
 
 
 class Ui_MainWindow(object):
@@ -383,6 +391,9 @@ class Ui_MainWindow(object):
 
         #Liens des boutons pour recherche
         self.quitter_rech.clicked.connect(self.Quitter)
+        self.charger_rech.clicked.connect(self.OuvrirImage)
+        self.charger_desc.clicked.connect(self.loadFeatures)
+        self.chercher.clicked.connect(self.Recherche)
 
     def Ouvrir_index(self, MainWindow):
         """Fonction pour ouvrir un explorateur de fichiers et charger les images"""
@@ -469,7 +480,167 @@ class Ui_MainWindow(object):
 
         print("Indexation terminée.")
 
-    
+    def OuvrirImage(self, MainWindow):
+        self.fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
+            None, "Select Image", "", "Image Files (*.png *.jpeg *.jpg *.bmp)"
+        )
+        if self.fileName:
+            pixmap = QtGui.QPixmap(self.fileName)
+            pixmap = pixmap.scaled(self.label_requete.width(),
+                                self.label_requete.height(), QtCore.Qt.KeepAspectRatio)
+            self.label_requete.setPixmap(pixmap)
+            self.label_requete.setAlignment(QtCore.Qt.AlignCenter)
+        else:
+            print("Aucune image requête sélectionnée. Dans ouvrir")
+
+    def loadFeatures(self, MainWindow):
+
+        self.algo_choice = 0
+        folder_model = ""
+
+        # Sélection du dossier selon le descripteur
+        if self.checkBox_HistC_rech.isChecked():
+            folder_model = './BGR'
+            self.algo_choice = 1
+        elif self.checkBox_HSV_rech.isChecked():
+            folder_model = './HSV'
+            self.algo_choice = 2
+        elif self.checkBox_SIFT_rech.isChecked():
+            folder_model = './SIFT'
+            self.algo_choice = 3
+        elif self.checkBox_ORB_rech.isChecked():
+            folder_model = './ORB'
+            self.algo_choice = 4
+        elif self.checkBox_GLCM_rech.isChecked():
+            folder_model = './GLCM'
+            self.algo_choice = 5
+        elif self.checkBox_LBP_rech.isChecked():
+            folder_model = './LBP'
+            self.algo_choice = 6
+        elif self.checkBox_HOG_rech.isChecked():
+            folder_model = './HOG'
+            self.algo_choice = 7
+        elif self.checkBox_Moments_rech.isChecked():
+            folder_model = './MOMENTS'
+            self.algo_choice = 8
+        else:
+            print("Merci de sélectionner un descripteur")
+            self.showDialog()
+            return
+
+        # Nettoyer la grille d'affichage
+        for i in reversed(range(self.gridLayout.count())):
+            self.gridLayout.itemAt(i).widget().setParent(None)
+
+        # Mise à jour des distances
+        if self.algo_choice in [3, 4, 5, 6, 7, 8]:
+            self.comboBox.clear()
+            self.comboBox.addItems(["Brute force", "Flann"])
+        else:
+            self.comboBox.clear()
+            self.comboBox.addItems(["Euclidienne", "Correlation", "Chi carre", "Intersection", "Bhattacharyya"])
+
+        # Vérification image requête
+        if len(filenames) < 1:
+            print("Merci de charger une image avec le bouton Ouvrir")
+            return
+
+        # Chargement
+        print("Chargement descripteurs en cours ...")
+        start_time = time.time()
+        self.features1 = []
+        pas = 0
+
+        # Construire un index de toutes les images dans imgDB
+        image_index = {}
+        for root, _, files in os.walk("imgDB"):
+            for f in files:
+                if f.lower().endswith((".jpg", ".jpeg", ".png")):
+                    image_index[os.path.splitext(f)[0]] = os.path.join(root, f)
+
+        # Charger les features en cherchant l'image correspondante dans l'index
+        all_txt = []
+        for root, _, files in os.walk(folder_model):
+            for file in files:
+                if file.endswith(".txt"):
+                    all_txt.append(os.path.join(root, file))
+
+        total_files = len(all_txt)
+
+        for txt_path in all_txt:
+            feature = np.loadtxt(txt_path)
+            base_name = os.path.splitext(os.path.basename(txt_path))[0]
+
+            if base_name in image_index:
+                img_path = image_index[base_name]
+                self.features1.append((img_path, feature))
+            else:
+                print(f"[AVERTISSEMENT] Image non trouvée pour : {base_name}")
+
+            pas += 1
+            self.progressBar_rech.setValue(int(100 * (pas / total_files)))
+
+        end_time = time.time()
+        print(f"Temps de chargement du descripteur {folder_model} : {end_time - start_time:.4f} secondes")
+
+
+    def Recherche(self, MainWindow):
+        for i in reversed(range(self.gridLayout.count())):
+            self.gridLayout.itemAt(i).widget().setParent(None)
+
+        if self.algo_choice == 0:
+            print("Il faut choisir une méthode !")
+            return
+
+        print(f"[Recherche] Image en mémoire : {getattr(self, 'fileName', 'Non définie')}")
+        if not hasattr(self, 'fileName') or not self.fileName:
+            print("Aucune image requête sélectionnée.")
+            return
+
+        start_time = time.time()
+        print("Extraction descripteur image requête...")
+
+        req = f.extractReqFeatures(self.fileName, self.algo_choice)
+        self.sortie = 9
+        distanceName = self.comboBox.currentText()
+
+        voisins = d.getkVoisins(self.features1, req, self.sortie, distanceName)
+
+        self.path_image_plus_proches = []
+        self.nom_image_plus_proches = []
+
+        for k in range(self.sortie):
+            self.path_image_plus_proches.append(voisins[k][0])
+            self.nom_image_plus_proches.append(os.path.basename(voisins[k][0]))
+
+        col = 3
+        target_width = 150
+        target_height = 150
+        for i in range(math.ceil(self.sortie / col)):
+            for j in range(col):
+                idx = i * col + j
+                if idx >= len(self.path_image_plus_proches):
+                    break
+                img = cv2.imread(self.path_image_plus_proches[idx], 1)
+                if img is None:
+                    continue
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img = cv2.resize(img, (target_width, target_height), interpolation=cv2.INTER_AREA)
+                qImg = QtGui.QImage(img.data, img.shape[1], img.shape[0], img.strides[0], QtGui.QImage.Format_RGB888)
+                pixmap = QtGui.QPixmap.fromImage(qImg)
+
+                # Création du QLabel
+                label = QtWidgets.QLabel()
+                label.setPixmap(pixmap)
+                label.setFixedSize(target_width + 10, target_height + 10)
+                label.setAlignment(QtCore.Qt.AlignCenter)
+                label.setStyleSheet("padding:5px; margin:5px; border: 1px solid #ccc;")
+
+                self.gridLayout.addWidget(label, i, j)
+
+        end_time = time.time()
+        print(f"Temps de recherche pour le descripteur {self.algo_choice} : {end_time - start_time:.4f} secondes")
+
 
 
 if __name__ == "__main__":
