@@ -43,6 +43,7 @@ class TabMultimodalController:
         # Links for multimodal buttons
         self.ui.quitter_mult.clicked.connect(self.ui.Quitter)
         self.ui.charger_image_mult.clicked.connect(self.load_img_request)
+        self.ui.retirer_image_mult.clicked.connect(self.remove_loaded_image)
         self.ui.charger_desc_mult.clicked.connect(self.load_features)
         self.ui.clear_mult.clicked.connect(self.reset_values)
         self.ui.chercher_mult.clicked.connect(self.search)
@@ -85,6 +86,13 @@ class TabMultimodalController:
         self.ui.progressBar_mult.setValue(0)
         self.ui.charger_desc_mult.setStyleSheet(f"background-color: {self.unloaded_color};")
 
+    def remove_loaded_image(self):
+        """
+        Remove the loaded image from the label and reset the file_name.
+        """
+        self.file_name = None
+        self.ui.label_requete_mult.clear()
+
     def _get_image_path_mapping(self):
         mapping = {}
         for root, _, files in os.walk("imgDB"):
@@ -125,7 +133,6 @@ class TabMultimodalController:
             self.chosen_mode = 0
         else:
             self.chosen_mode = -1  # No valid mode
-            self.ui.show_error("Erreur !", "Aucune image ou texte sélectionné. Veuillez sélectionner une image ou entrer un texte.")
 
     def load_features(self):
         pas = 0
@@ -165,14 +172,20 @@ class TabMultimodalController:
         return []
 
     def _clear_scroll_area(self):
-        layout = self.ui.scrollArea_content_mult.layout()
-        # Remove layout from the scroll area
-        if layout is not None:
-            for i in reversed(range(layout.count())):
-                widget = layout.itemAt(i).widget()
+        content_widget = self.ui.scrollArea_content_mult
+        old_layout = content_widget.layout()
+
+        if old_layout is not None:
+            # Supprimer tous les widgets du layout
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                widget = item.widget()
                 if widget is not None:
+                    widget.setParent(None)
                     widget.deleteLater()
-            layout.deleteLater()
+
+            # Détacher le layout et le supprimer
+            QtWidgets.QWidget().setLayout(old_layout)  # Détache le layout
 
     def search(self):
         """

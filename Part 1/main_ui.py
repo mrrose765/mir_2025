@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'test.ui'
+# Form implementation generated from reading ui file 'part2.ui'
 #
 # Created by: PyQt5 UI code generator 5.14.1
 #
@@ -375,7 +375,7 @@ class Ui_MainWindow(object):
         self.tab_multimodal = QtWidgets.QWidget()
         self.tab_multimodal.setObjectName("tab_multimodal")
         self.charger_image_mult = QtWidgets.QPushButton(self.tab_multimodal)
-        self.charger_image_mult.setGeometry(QtCore.QRect(30, 160, 271, 41))
+        self.charger_image_mult.setGeometry(QtCore.QRect(20, 160, 131, 41))
         font = QtGui.QFont()
         font.setPointSize(11)
         font.setBold(True)
@@ -513,6 +513,14 @@ class Ui_MainWindow(object):
         font.setWeight(75)
         self.clear_mult.setFont(font)
         self.clear_mult.setObjectName("clear_mult")
+        self.retirer_image_mult = QtWidgets.QPushButton(self.tab_multimodal)
+        self.retirer_image_mult.setGeometry(QtCore.QRect(180, 160, 131, 41))
+        font = QtGui.QFont()
+        font.setPointSize(11)
+        font.setBold(True)
+        font.setWeight(75)
+        self.retirer_image_mult.setFont(font)
+        self.retirer_image_mult.setObjectName("retirer_image_mult")
         self.tabWidget.addTab(self.tab_multimodal, "")
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
@@ -524,7 +532,7 @@ class Ui_MainWindow(object):
         MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
 
     def retranslateUi(self, MainWindow):
@@ -569,7 +577,7 @@ class Ui_MainWindow(object):
         self.label_11.setText(_translate("MainWindow", "Métriques"))
         self.label_12.setText(_translate("MainWindow", "Top :"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_rech), _translate("MainWindow", "Recherche"))
-        self.charger_image_mult.setText(_translate("MainWindow", "Charger image"))
+        self.charger_image_mult.setText(_translate("MainWindow", "Charger "))
         self.text_request.setDocumentTitle(_translate("MainWindow", "ttttt"))
         self.label_texte_mult.setText(_translate("MainWindow", "Texte "))
         self.label_img_mult.setText(_translate("MainWindow", "Image requête"))
@@ -586,6 +594,7 @@ class Ui_MainWindow(object):
         self.label_results_mult.setText(_translate("MainWindow", "Résultats"))
         self.quitter_mult.setText(_translate("MainWindow", "Quitter"))
         self.clear_mult.setText(_translate("MainWindow", "Clear"))
+        self.retirer_image_mult.setText(_translate("MainWindow", "Retirer"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_multimodal), _translate("MainWindow", "Multimodale"))
 
 

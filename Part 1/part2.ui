@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab_index">
      <attribute name="title">
@@ -1013,9 +1013,9 @@
      <widget class="QPushButton" name="charger_image_mult">
       <property name="geometry">
        <rect>
-        <x>30</x>
+        <x>20</x>
         <y>160</y>
-        <width>271</width>
+        <width>131</width>
         <height>41</height>
        </rect>
       </property>
@@ -1027,7 +1027,7 @@
        </font>
       </property>
       <property name="text">
-       <string>Charger image</string>
+       <string>Charger </string>
       </property>
      </widget>
      <widget class="QTextEdit" name="text_request">
@@ -1392,6 +1392,26 @@
       </property>
       <property name="text">
        <string>Clear</string>
+      </property>
+     </widget>
+     <widget class="QPushButton" name="retirer_image_mult">
+      <property name="geometry">
+       <rect>
+        <x>180</x>
+        <y>160</y>
+        <width>131</width>
+        <height>41</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>Retirer</string>
       </property>
      </widget>
     </widget>
