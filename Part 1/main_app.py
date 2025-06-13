@@ -1,8 +1,11 @@
 import sys
 from PyQt5 import QtWidgets, QtCore, QtGui
-from main_ui import Ui_MainWindow
+from PyQt5.QtWidgets import QMessageBox
+
+from main_ui import (Ui_MainWindow)
 from tab_index import TabIndexController
 from tab_recherche import TabRechercheController
+from tab_mult import TabMultimodalController
 
 
 
@@ -12,14 +15,29 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainApp, self).__init__()
         self.setupUi(self)
 
+        self.feature_folder = "features"
 
+        # Load controllers for each tab (Contains the logic)
         self.tab_index = TabIndexController(self)
         self.tab_recherche = TabRechercheController(self)
+        self.tab_multimodal = TabMultimodalController(self)
 
     def Quitter(self):
-        """ Fonction pour quitter l'application """
         print("Fermeture de l'application...")
         QtWidgets.QApplication.instance().quit()
+
+    @staticmethod
+    def show_error(title, message):
+        """
+        Used to display an error message as pop-up.
+        """
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setWindowTitle(title)
+        msg.setText(message)
+        msg.setStandardButtons(QMessageBox.Ok)
+        msg.exec_()
+
 
 
 if __name__ == "__main__":
