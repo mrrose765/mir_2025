@@ -1233,6 +1233,21 @@
         <string>50</string>
        </property>
       </item>
+      <item>
+       <property name="text">
+        <string>100</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>150</string>
+       </property>
+      </item>
+      <item>
+       <property name="text">
+        <string>153</string>
+       </property>
+      </item>
      </widget>
      <widget class="QLabel" name="label_top_mult">
       <property name="geometry">
