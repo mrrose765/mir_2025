@@ -1,13 +1,13 @@
 import sys
-from PyQt5 import QtWidgets, QtCore, QtGui
+
+from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
+from functions import get_device
 from main_ui import (Ui_MainWindow)
 from tab_index import TabIndexController
-from tab_recherche import TabRechercheController
 from tab_mult import TabMultimodalController
-
-
+from tab_recherche import TabRechercheController
 
 
 class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
@@ -17,6 +17,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
 
         self.features_folder = "features"
         self.image_folder = "imgDB"
+
+        self.device = get_device()
 
         # Load controllers for each tab (Contains the logic)
         self.tab_index = TabIndexController(self)
@@ -38,7 +40,6 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         msg.setText(message)
         msg.setStandardButtons(QMessageBox.Ok)
         msg.exec_()
-
 
 
 if __name__ == "__main__":

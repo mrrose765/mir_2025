@@ -1,14 +1,14 @@
 # Defintion de toute les fonctions à appeller dans l'interface
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QMessageBox
+import json
 import os
+
 import cv2
 import numpy as np
-from skimage.transform import resize
-from skimage.feature import hog
-from skimage import exposure
-from skimage import io, color, img_as_ubyte
-from matplotlib import pyplot as plt
+import torch
+from PyQt5.QtWidgets import QMessageBox
+from skimage import img_as_ubyte
 from skimage.feature import hog, greycomatrix, greycoprops, local_binary_pattern
+from skimage.transform import resize
 
 
 def showDialog():
@@ -250,3 +250,29 @@ def concat_vectors(img_feat, txt_feat, normalize=True):
 
     concat = np.concatenate([img_feat, txt_feat])
     return concat
+
+
+def load_json_file(file_path):
+    with open(file_path, 'r') as file:
+        data = json.load(file)
+    return data
+
+
+def get_device():
+    try:
+        return "cuda" if torch.cuda.is_available() else "cpu"
+    except ImportError:
+        print("PyTorch is not installed. Defaulting to CPU.")
+        return "cpu"
+
+def extract_class(name):
+  """
+  Les images sont nommées comme : A_B_animal_race-X où
+    A = animal_id
+    B = race_id
+  L'id de la classe sera: A*6+B
+  Ex:
+    0_5_araignees_tarantula_795 (5)
+    2_2_oiseaux_greatgreyowl_2092 (2*6+2 = 14)
+  """
+  return int(name.split("_")[0])*6 + int(name.split("_")[1])

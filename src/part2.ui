@@ -24,7 +24,7 @@
      </rect>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>2</number>
     </property>
     <widget class="QWidget" name="tab_index">
      <attribute name="title">
@@ -1063,7 +1063,7 @@
        <enum>QFrame::Panel</enum>
       </property>
       <property name="text">
-       <string>Texte </string>
+       <string>Texte  (anglais uniquement)</string>
       </property>
       <property name="alignment">
        <set>Qt::AlignCenter</set>
@@ -1357,9 +1357,9 @@
      <widget class="QPushButton" name="quitter_mult">
       <property name="geometry">
        <rect>
-        <x>1010</x>
-        <y>490</y>
-        <width>181</width>
+        <x>830</x>
+        <y>460</y>
+        <width>351</width>
         <height>41</height>
        </rect>
       </property>
@@ -1377,9 +1377,9 @@
      <widget class="QPushButton" name="clear_mult">
       <property name="geometry">
        <rect>
-        <x>820</x>
-        <y>490</y>
-        <width>181</width>
+        <x>830</x>
+        <y>400</y>
+        <width>351</width>
         <height>41</height>
        </rect>
       </property>
@@ -1412,6 +1412,35 @@
       </property>
       <property name="text">
        <string>Retirer</string>
+      </property>
+     </widget>
+     <widget class="QLabel" name="label_metriques_mult">
+      <property name="geometry">
+       <rect>
+        <x>820</x>
+        <y>60</y>
+        <width>371</width>
+        <height>141</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>12</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::Panel</enum>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="scaledContents">
+       <bool>true</bool>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </widget>

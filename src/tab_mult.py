@@ -3,12 +3,11 @@ import os
 
 import cv2
 import numpy as np
-import torch
 from PyQt5 import QtWidgets, QtCore, QtGui
 from sentence_transformers import SentenceTransformer
 
 from distances import cosine_distance
-from functions import concat_vectors
+from functions import concat_vectors, load_json_file, extract_class
 
 
 def get_k_neighbors(features_dict, query_feature, k):
@@ -22,31 +21,13 @@ def get_k_neighbors(features_dict, query_feature, k):
     return distances[:k]
 
 
-def load_json_file(file_path):
-    """
-    Load a JSON file and return its content.
-    """
-    import json
-    with open(file_path, 'r') as file:
-        data = json.load(file)
-    return data
-
-
-def get_device():
-    try:
-        return "cuda" if torch.cuda.is_available() else "cpu"
-    except ImportError:
-        print("PyTorch is not installed. Defaulting to CPU.")
-        return "cpu"
-
-
-def load_sentence_transformer(model_name="all-MiniLM-L6-v2"):
+def load_sentence_transformer(model_name="all-MiniLM-L6-v2", device='cpu'):
     """
     Load a pre-trained SentenceTransformer model.
     """
     try:
-        print(f"Loading SentenceTransformer model: {model_name} on {get_device()}...")
-        model = SentenceTransformer(model_name, device=get_device())
+        print(f"Loading SentenceTransformer model: {model_name} on {device}...")
+        model = SentenceTransformer(model_name, device=device)
         print(f"Model {model_name} loaded successfully.")
         return model
     except Exception as e:
@@ -71,9 +52,9 @@ class TabMultimodalController:
         # Links for multimodal buttons
         self.ui.quitter_mult.clicked.connect(self.ui.Quitter)
         self.ui.charger_image_mult.clicked.connect(self.load_img_request)
-        self.ui.retirer_image_mult.clicked.connect(self.remove_loaded_image)
+        self.ui.retirer_image_mult.clicked.connect(self._remove_loaded_image)
         self.ui.charger_desc_mult.clicked.connect(self.load_features)
-        self.ui.clear_mult.clicked.connect(self.reset_values)
+        self.ui.clear_mult.clicked.connect(self._reset_values)
         self.ui.chercher_mult.clicked.connect(self.search)
 
         # Attributes used in the class
@@ -89,6 +70,9 @@ class TabMultimodalController:
         self.text_features = {}
         self.combined_features = {}
 
+        # [class_id] = number of images in this class
+        self.number_per_class = {}
+
         # Setup parameters for multimodal tab
         self.available_modes = {
             0: "Text",
@@ -100,7 +84,7 @@ class TabMultimodalController:
         self.unloaded_color = "#d60000"
         self.loaded_color = "#01aa29"
 
-    def reset_values(self):
+    def _reset_values(self):
         """
         Reset the values of the attributes used in the class.
         """
@@ -118,12 +102,28 @@ class TabMultimodalController:
 
         self._clear_scroll_area()
 
-    def remove_loaded_image(self):
+    def _remove_loaded_image(self):
         """
         Remove the loaded image from the label and reset the file_name.
         """
         self.file_name = None
         self.ui.label_requete_mult.clear()
+
+    def _clear_scroll_area(self):
+        content_widget = self.ui.scrollArea_content_mult
+        old_layout = content_widget.layout()
+
+        if old_layout is not None:
+            # Supprimer tous les widgets du layout
+            while old_layout.count():
+                item = old_layout.takeAt(0)
+                widget = item.widget()
+                if widget is not None:
+                    widget.setParent(None)
+                    widget.deleteLater()
+
+            # Détacher le layout et le supprimer
+            QtWidgets.QWidget().setLayout(old_layout)  # Détache le layout
 
     def _get_image_path_mapping(self):
         mapping = {}
@@ -168,8 +168,8 @@ class TabMultimodalController:
 
     def load_features(self):
         if self.sentence_model is None:
-            self.ui.progressBar_mult.setValue(1) # Fake progress to show loading
-            self.sentence_model = load_sentence_transformer("all-MiniLM-L6-v2")
+            self.ui.progressBar_mult.setValue(1)  # Fake progress to show loading
+            self.sentence_model = load_sentence_transformer("all-MiniLM-L6-v2", device=self.ui.device)
             if self.sentence_model is None:
                 self.ui.show_error("Erreur !", "Le modèle de transformation de phrase n'a pas pu être chargé.")
                 return
@@ -178,9 +178,13 @@ class TabMultimodalController:
         max_images = len(self.image_path_mapping)
         self.ui.progressBar_rech.setValue(0)
         for name in self.image_path_mapping.keys():
+            # Count the number of images per class
+            self.number_per_class[extract_class(name)] = self.number_per_class.get(extract_class(name), 0) + 1
+
             # text features
             if len(self.image_features) < max_images:
-                feature = np.loadtxt(f"{self.ui.features_folder}/image_features/{self.image_features_folder}/{name}.txt")
+                feature = np.loadtxt(
+                    f"{self.ui.features_folder}/image_features/{self.image_features_folder}/{name}.txt")
                 self.image_features[name] = feature
             # text features
             if len(self.text_features) < max_images:
@@ -220,22 +224,6 @@ class TabMultimodalController:
         combined_request = concat_vectors(image_features, text_features)
         return get_k_neighbors(self.combined_features, combined_request, k)
 
-    def _clear_scroll_area(self):
-        content_widget = self.ui.scrollArea_content_mult
-        old_layout = content_widget.layout()
-
-        if old_layout is not None:
-            # Supprimer tous les widgets du layout
-            while old_layout.count():
-                item = old_layout.takeAt(0)
-                widget = item.widget()
-                if widget is not None:
-                    widget.setParent(None)
-                    widget.deleteLater()
-
-            # Détacher le layout et le supprimer
-            QtWidgets.QWidget().setLayout(old_layout)  # Détache le layout
-
     def search(self):
         """
         Search the best matches based on the chosen mode.
@@ -251,16 +239,22 @@ class TabMultimodalController:
                                "Aucune image ou texte sélectionné. Veuillez sélectionner une image ou entrer un texte.")
             return
 
+        self.ui.label_metriques_mult.clear()
+
         k = int(self.ui.comboBox_top_mult.currentText())
         neighbors = []
         if self.chosen_mode == 0:
             neighbors = self._text_search(k)
         elif self.chosen_mode == 1:
             neighbors = self._image_search(k)
+            self._display_metrics(neighbors)
         elif self.chosen_mode == 2:
             neighbors = self._combined_search(k)
+            self._display_metrics(neighbors)
+
 
         self._display_result(neighbors)
+
 
     def _display_result(self, neighbors):
         self._clear_scroll_area()
@@ -300,6 +294,8 @@ class TabMultimodalController:
 
             # Text processing and QLabel
             caption = self.image_text_mapping.get(f"{image_name}.jpg", "No caption available")
+            caption += f"\n(Sim : {1 - neighbors[index][1]:.4f})"
+
             text_label = QtWidgets.QLabel(caption)
             text_label.setAlignment(QtCore.Qt.AlignCenter)
             text_label.setWordWrap(True)
@@ -328,3 +324,32 @@ class TabMultimodalController:
 
         # Set the layout with all the block widgets to the scroll area content
         self.ui.scrollArea_content_mult.setLayout(vbox_layout)
+
+
+    def _display_metrics(self, neighbors):
+        """
+        Affiche les métriques (R/P) pour les voisins trouvés. (Pas pour la recherche textuelle)
+        """
+        if not neighbors:
+            return
+
+
+        class_request = extract_class(os.path.splitext(os.path.basename(self.file_name))[0])
+        ### Précision (tp / n récupérés)
+        neighbors_class = [extract_class(name) for name, _ in neighbors]
+        n_true_positives = len([c for c in neighbors_class if c == class_request])
+        precision = n_true_positives / len(neighbors) if neighbors else 0
+
+        ### Rappel (tp / nombre d'images de la classe)
+        n_images_in_class = self.number_per_class.get(class_request, 0)
+        recall = n_true_positives / n_images_in_class if n_images_in_class > 0 else 0
+
+
+        metrics_text = f"""\
+        Résultat pour {len(neighbors)} images:\n"
+        Précision@{len(neighbors)}: {precision:.3f}\n
+        Rappel: {recall:.3f} ({n_true_positives} / {n_images_in_class})\n
+        """
+
+
+        self.ui.label_metriques_mult.setText(metrics_text)
