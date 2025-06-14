@@ -7,7 +7,7 @@ Moteur de recherche pour le cours de "Multimedia Information Retrieval" de l'Uni
 Clone le dépôt et se placer dans le répertoire du projet.
 
 ```shell
-git clone https://github.com/MrRose765/MIR_2025.git && cd MIR_2025
+git clone --depth=1 https://github.com/MrRose765/MIR_2025.git && cd MIR_2025
 ```
 
 ## Prérequis
