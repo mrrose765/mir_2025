@@ -20,9 +20,9 @@ def showDialog():
     returnValue = msgBox.exec()
 
 
-def generateHistogramme_HSV(image_paths, progressBar=None):
-    if not os.path.isdir("HSV"):
-        os.mkdir("HSV")
+def generateHistogramme_HSV(features_folder, image_paths, progressBar=None):
+    if not os.path.isdir(f"{features_folder}/HSV"):
+        os.mkdir(f"{features_folder}/HSV")
     total = len(image_paths)
     for i, image_path in enumerate(image_paths):
         img = cv2.imread(image_path)
@@ -35,16 +35,16 @@ def generateHistogramme_HSV(image_paths, progressBar=None):
         feature = np.concatenate((histH, np.concatenate((histS, histV), axis=None)), axis=None)
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("HSV/" + str(num_image) + ".txt", feature)
+        np.savetxt(f"{features_folder}/HSV/" + str(num_image) + ".txt", feature)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("Indexation Hist HSV terminée !!!!")
 
 
-def generateHistogramme_Color(image_paths, progressBar):
-    if not os.path.isdir("BGR"):
-        os.mkdir("BGR")
+def generateHistogramme_Color(features_folder, image_paths, progressBar):
+    if not os.path.isdir(f"{features_folder}/BGR"):
+        os.mkdir(f"{features_folder}/BGR")
     total = len(image_paths)
     for i, image_path in enumerate(image_paths):
         img = cv2.imread(image_path)
@@ -56,16 +56,16 @@ def generateHistogramme_Color(image_paths, progressBar):
         feature = np.concatenate((histB, np.concatenate((histG, histR), axis=None)), axis=None)
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("BGR/" + str(num_image) + ".txt", feature)
+        np.savetxt(f"{features_folder}/BGR/" + str(num_image) + ".txt", feature)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("indexation Hist Couleur terminée !!!!")
 
 
-def generateSIFT(image_paths, progressBar=None):
-    if not os.path.isdir("SIFT"):
-        os.mkdir("SIFT")
+def generateSIFT(features_folder, image_paths, progressBar=None):
+    if not os.path.isdir(f"{features_folder}/SIFT"):
+        os.mkdir(f"{features_folder}/SIFT")
     total = len(image_paths)
     sift = cv2.SIFT_create()
     for i, image_path in enumerate(image_paths):
@@ -77,16 +77,16 @@ def generateSIFT(image_paths, progressBar=None):
             des = np.array([])  # pour éviter erreur sauvegarde
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("SIFT/" + str(num_image) + ".txt", des)
+        np.savetxt(f"{features_folder}/SIFT/" + str(num_image) + ".txt", des)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("Indexation SIFT terminée !!!!")
 
 
-def generateORB(image_paths, progressBar=None):
-    if not os.path.isdir("ORB"):
-        os.mkdir("ORB")
+def generateORB(features_folder, image_paths, progressBar=None):
+    if not os.path.isdir(f"{features_folder}/ORB"):
+        os.mkdir(f"{features_folder}/ORB")
     total = len(image_paths)
     orb = cv2.ORB_create()
     for i, image_path in enumerate(image_paths):
@@ -98,16 +98,16 @@ def generateORB(image_paths, progressBar=None):
             descrip1 = np.array([])
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("ORB/" + str(num_image) + ".txt", descrip1)
+        np.savetxt(f"{features_folder}/ORB/" + str(num_image) + ".txt", descrip1)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("Indexation ORB terminée !!!!")
 
 
-def generateGLCM(image_paths, progressBar=None):
-    if not os.path.isdir("GLCM"):
-        os.mkdir("GLCM")
+def generateGLCM(features_folder, image_paths, progressBar=None):
+    if not os.path.isdir(f"{features_folder}/GLCM"):
+        os.mkdir(f"{features_folder}/GLCM")
     distances = [1, -1]
     angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
     total = len(image_paths)
@@ -125,16 +125,16 @@ def generateGLCM(image_paths, progressBar=None):
         feature = np.concatenate(glcmProperties, axis=None)
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("GLCM/" + str(num_image) + ".txt", feature)
+        np.savetxt(f"{features_folder}/GLCM/" + str(num_image) + ".txt", feature)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("Indexation GLCM terminée !!!!")
 
 
-def generateLBP(image_paths, progressBar=None):
-    if not os.path.isdir("LBP"):
-        os.mkdir("LBP")
+def generateLBP(features_folder, image_paths, progressBar=None):
+    if not os.path.isdir(f"{features_folder}/LBP"):
+        os.mkdir(f"{features_folder}/LBP")
     points = 8
     radius = 1
     method = 'default'
@@ -156,16 +156,16 @@ def generateLBP(image_paths, progressBar=None):
                 histograms = np.concatenate((histograms, subHist), axis=None)
 
         num_image = os.path.splitext(os.path.basename(image_path))[0]
-        np.savetxt("LBP/" + str(num_image) + ".txt", histograms)
+        np.savetxt(f"{features_folder}/LBP/" + str(num_image) + ".txt", histograms)
 
         if progressBar:
             progressBar.setValue(100 * ((i + 1) / total))
     print("Indexation LBP terminée !!!!")
 
 
-def generateHOG(filenames, progressBar):
-    if not os.path.isdir("HOG"):
-        os.mkdir("HOG")
+def generateHOG(features_folder, filenames, progressBar):
+    if not os.path.isdir(f"{features_folder}/HOG"):
+        os.mkdir(f"{features_folder}/HOG")
 
     i = 0
     total = len(filenames)
@@ -189,7 +189,7 @@ def generateHOG(filenames, progressBar):
                                       feature_vector=True)
 
             filename = os.path.basename(path).split('.')[0]
-            np.savetxt(f"HOG/{filename}.txt", features)
+            np.savetxt(f"{features_folder}/HOG/{filename}.txt", features)
 
             progressBar.setValue(int(100 * (i + 1) / total))
             i += 1

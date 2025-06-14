@@ -74,27 +74,28 @@ class TabIndexController:
             print("Merci de sélectionner un descripteur via le menu ...")
             f.showDialog()
             return
+        image_features_folder = self.ui.features_folder + "/image_features"
 
         # Exécute les descripteurs cochés
         if self.ui.checkBox_HistC_index.isChecked():
-            f.generateHistogramme_Color(self.list_images_index, self.ui.progressBar)
+            f.generateHistogramme_Color(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_HSV_index.isChecked():
-            f.generateHistogramme_HSV(self.list_images_index, self.ui.progressBar)
+            f.generateHistogramme_HSV(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_SIFT_index.isChecked():
-            f.generateSIFT(self.list_images_index, self.ui.progressBar)
+            f.generateSIFT(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_ORB_index.isChecked():
-            f.generateORB(self.list_images_index, self.ui.progressBar)
+            f.generateORB(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_GLCM_index.isChecked():
-            f.generateGLCM(self.list_images_index, self.ui.progressBar)
+            f.generateGLCM(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_LBP_index.isChecked():
-            f.generateLBP(self.list_images_index, self.ui.progressBar)
+            f.generateLBP(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         if self.ui.checkBox_HOG_index.isChecked():
-            f.generateHOG(self.list_images_index, self.ui.progressBar)
+            f.generateHOG(image_features_folder, self.list_images_index, self.ui.progressBar)
 
         print("Indexation terminée.")

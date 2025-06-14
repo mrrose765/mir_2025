@@ -15,7 +15,8 @@ class MainApp(QtWidgets.QMainWindow, Ui_MainWindow):
         super(MainApp, self).__init__()
         self.setupUi(self)
 
-        self.feature_folder = "features"
+        self.features_folder = "features"
+        self.image_folder = "imgDB"
 
         # Load controllers for each tab (Contains the logic)
         self.tab_index = TabIndexController(self)

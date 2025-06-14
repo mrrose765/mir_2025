@@ -1,12 +1,14 @@
-import numpy as np
-from PyQt5 import QtWidgets, QtCore, QtGui
-import os
 import operator
-import math
+import os
+
 import cv2
+import numpy as np
+import torch
+from PyQt5 import QtWidgets, QtCore, QtGui
+from sentence_transformers import SentenceTransformer
+
 from distances import cosine_distance
 from functions import concat_vectors
-from sentence_transformers import SentenceTransformer
 
 
 def get_k_neighbors(features_dict, query_feature, k):
@@ -19,6 +21,7 @@ def get_k_neighbors(features_dict, query_feature, k):
     # Return the k closest features
     return distances[:k]
 
+
 def load_json_file(file_path):
     """
     Load a JSON file and return its content.
@@ -28,36 +31,42 @@ def load_json_file(file_path):
         data = json.load(file)
     return data
 
+
 def get_device():
     try:
-        import torch
         return "cuda" if torch.cuda.is_available() else "cpu"
     except ImportError:
         print("PyTorch is not installed. Defaulting to CPU.")
         return "cpu"
+
 
 def load_sentence_transformer(model_name="all-MiniLM-L6-v2"):
     """
     Load a pre-trained SentenceTransformer model.
     """
     try:
+        print(f"Loading SentenceTransformer model: {model_name} on {get_device()}...")
         model = SentenceTransformer(model_name, device=get_device())
+        print(f"Model {model_name} loaded successfully.")
         return model
     except Exception as e:
         print(f"Error loading model {model_name}: {e}")
         return None
 
+
 class TabMultimodalController:
     def __init__(self, main_app):
         self.ui = main_app
+        # Default features used for multimodal search (in /features/image_features folder)
+        self.image_features_folder = "ViT-21k"
+        # For text, they are stored in the /features/text_features folder
 
         # [image_name.jpg] = text
-        self.image_text_mapping = load_json_file(self.ui.feature_folder + "/captions.json")
+        self.image_text_mapping = load_json_file("captions.json")
 
         # Will be initialized with the image features.
         # [image_name] = image_path (in imgDB)
         self.image_path_mapping = self._get_image_path_mapping()
-
 
         # Links for multimodal buttons
         self.ui.quitter_mult.clicked.connect(self.ui.Quitter)
@@ -72,7 +81,7 @@ class TabMultimodalController:
         self.text_request = None
         self.images_proches = []
 
-        self.sentence_model = load_sentence_transformer()
+        self.sentence_model = None
 
         # Features indexes
         # [image_name] = feature_vector
@@ -118,7 +127,7 @@ class TabMultimodalController:
 
     def _get_image_path_mapping(self):
         mapping = {}
-        for root, _, files in os.walk("imgDB"):
+        for root, _, files in os.walk(self.ui.image_folder):
             for f in files:
                 if f.lower().endswith((".jpg", ".jpeg", ".png")):
                     mapping[os.path.splitext(f)[0]] = os.path.join(root, f)
@@ -158,17 +167,24 @@ class TabMultimodalController:
             self.chosen_mode = -1  # No valid mode
 
     def load_features(self):
+        if self.sentence_model is None:
+            self.ui.progressBar_mult.setValue(1) # Fake progress to show loading
+            self.sentence_model = load_sentence_transformer("all-MiniLM-L6-v2")
+            if self.sentence_model is None:
+                self.ui.show_error("Erreur !", "Le modèle de transformation de phrase n'a pas pu être chargé.")
+                return
+
         pas = 0
         max_images = len(self.image_path_mapping)
         self.ui.progressBar_rech.setValue(0)
         for name in self.image_path_mapping.keys():
             # text features
             if len(self.image_features) < max_images:
-                feature = np.loadtxt(f"{self.ui.feature_folder}/image_features/{name}.txt")
+                feature = np.loadtxt(f"{self.ui.features_folder}/image_features/{self.image_features_folder}/{name}.txt")
                 self.image_features[name] = feature
             # text features
             if len(self.text_features) < max_images:
-                feature = np.loadtxt(f"{self.ui.feature_folder}/text_features/{name}.txt")
+                feature = np.loadtxt(f"{self.ui.features_folder}/text_features/{name}.txt")
                 self.text_features[name] = feature
             # combined  features
             if len(self.combined_features) < max_images:
@@ -183,8 +199,6 @@ class TabMultimodalController:
         self.ui.charger_desc_mult.setStyleSheet(f"background-color: {self.loaded_color};")
 
     def _text_search(self, k):
-        # TODO: Replace with correct text request
-        # Load features '1_0_chiens_Siberianhusky_828.txt'
         feature = self.sentence_model.encode(self.text_request, convert_to_tensor=True)
 
         return get_k_neighbors(self.text_features, feature, k)
@@ -201,7 +215,6 @@ class TabMultimodalController:
 
     def _combined_search(self, k):
         image_features = self.image_features[os.path.splitext(os.path.basename(self.file_name))[0]]
-        # TODO: Replace with correct text request
         text_features = self.sentence_model.encode(self.text_request, convert_to_tensor=True)
 
         combined_request = concat_vectors(image_features, text_features)
@@ -228,12 +241,14 @@ class TabMultimodalController:
         Search the best matches based on the chosen mode.
         """
         if not self.text_features or not self.image_features:
-            self.ui.show_error("Erreur !", "Aucun descripteur chargé. Veuillez charger les descripteurs d'images et de texte.")
+            self.ui.show_error("Erreur !",
+                               "Aucun descripteur chargé. Veuillez charger les descripteurs d'images et de texte.")
             return
 
         self._determine_mode()
         if self.chosen_mode == -1:
-            self.ui.show_error("Erreur !", "Aucune image ou texte sélectionné. Veuillez sélectionner une image ou entrer un texte.")
+            self.ui.show_error("Erreur !",
+                               "Aucune image ou texte sélectionné. Veuillez sélectionner une image ou entrer un texte.")
             return
 
         k = int(self.ui.comboBox_top_mult.currentText())
@@ -256,7 +271,6 @@ class TabMultimodalController:
         # Create a vertical layout for the scroll area content
         vbox_layout = QtWidgets.QVBoxLayout()
         vbox_layout.setAlignment(QtCore.Qt.AlignTop)
-
 
         # Add blocks of images and text
         for index in range(len(neighbors)):
@@ -314,5 +328,3 @@ class TabMultimodalController:
 
         # Set the layout with all the block widgets to the scroll area content
         self.ui.scrollArea_content_mult.setLayout(vbox_layout)
-
-

@@ -1,0 +1,7 @@
+.idea/
+__pycache__/
+
+features/
+imgDB/
+
+rp_courbes/

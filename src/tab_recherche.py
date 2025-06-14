@@ -40,32 +40,32 @@ class TabRechercheController:
     def loadFeatures(self):
 
         self.algo_choice = 0
-        folder_model = ""
+        folder_model = self.ui.features_folder  + "/image_features"
 
         # Sélection du dossier selon le descripteur
         if self.ui.checkBox_HistC_rech.isChecked():
-            folder_model = './BGR'
+            folder_model += '/BGR'
             self.algo_choice = 1
         elif self.ui.checkBox_HSV_rech.isChecked():
-            folder_model = './HSV'
+            folder_model += '/HSV'
             self.algo_choice = 2
         elif self.ui.checkBox_SIFT_rech.isChecked():
-            folder_model = './SIFT'
+            folder_model += '/SIFT'
             self.algo_choice = 3
         elif self.ui.checkBox_ORB_rech.isChecked():
-            folder_model = './ORB'
+            folder_model += '/ORB'
             self.algo_choice = 4
         elif self.ui.checkBox_GLCM_rech.isChecked():
-            folder_model = './GLCM'
+            folder_model += '/GLCM'
             self.algo_choice = 5
         elif self.ui.checkBox_LBP_rech.isChecked():
-            folder_model = './LBP'
+            folder_model += '/LBP'
             self.algo_choice = 6
         elif self.ui.checkBox_HOG_rech.isChecked():
-            folder_model = './HOG'
+            folder_model += '/HOG'
             self.algo_choice = 7
         elif self.ui.checkBox_Moments_rech.isChecked():
-            folder_model = './MOMENTS'
+            folder_model += '/MOMENTS'
             self.algo_choice = 8
         else:
             print("Merci de sélectionner un descripteur")
@@ -97,7 +97,7 @@ class TabRechercheController:
 
         # Construire un index de toutes les images dans imgDB
         image_index = {}
-        for root, _, files in os.walk("imgDB"):
+        for root, _, files in os.walk(self.ui.image_folder):
             for f in files:
                 if f.lower().endswith((".jpg", ".jpeg", ".png")):
                     image_index[os.path.splitext(f)[0]] = os.path.join(root, f)
