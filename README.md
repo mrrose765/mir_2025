@@ -44,3 +44,24 @@ et lancer l'application:
 ````shell
 python3 main_app.py
 ````
+
+# Notes
+Si, lors de l'installation, vous rencontrez une erreur comme :
+```shell
+bash: ./download_data.sh: /bin/bash^M: bad interpreter: No such file or directory
+```
+Cela signifie que le fichier `download_data.sh` a été créé ou modifié automatiquement sur votre machine, 
+ce qui peut introduire des caractères de fin de ligne incompatibles avec Linux. ([source](https://stackoverflow.com/questions/14219092/bash-script-bin-bashm-bad-interpreter-no-such-file-or-directory))
+
+Pour corriger cela, vous pouvez utiliser la commande suivante sur le conteneur Docker pour convertir le fichier en format Unix :
+
+```shell
+sed -i 's/\r$//' download_data.sh
+```
+
+ou
+
+```shell
+apt-get install -y dos2unix
+dos2unix download_data.sh
+```
