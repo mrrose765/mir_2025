@@ -10,6 +10,10 @@ from skimage import img_as_ubyte
 from skimage.feature import hog, greycomatrix, greycoprops, local_binary_pattern
 from skimage.transform import resize
 
+import torch
+import torchvision.models as models
+import torchvision.transforms as transforms
+from PIL import Image
 
 def showDialog():
     msgBox = QMessageBox()
@@ -199,12 +203,56 @@ def generateHOG(features_folder, filenames, progressBar):
 
     print("Indexation HOG terminée !!!!")
 
+def generateMobileNetFeatures(features_folder, filenames, progressBar):
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def extractReqFeatures(fileName, algo_choice):
+    # Charger MobileNetV2 et enlever la dernière couche de classification
+    model = models.mobilenet_v2(pretrained=True)
+    model.classifier = torch.nn.Identity()
+    model.eval()
+    model.to(device)
+
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                             std=[0.229, 0.224, 0.225])
+    ])
+
+    # Créer le dossier de sortie si besoin
+    output_folder = f"{features_folder}/MobileNet"
+    os.makedirs(output_folder, exist_ok=True)
+
+    total = len(filenames)
+
+    for i, path in enumerate(filenames):
+        try:
+            image = Image.open(path).convert("RGB")
+            tensor = transform(image).unsqueeze(0).to(device)
+
+            with torch.no_grad():
+                features = model(tensor)
+
+            features_np = features.cpu().numpy().squeeze()
+            filename = os.path.splitext(os.path.basename(path))[0]
+            np.savetxt(f"{output_folder}/{filename}.txt", features_np, fmt="%.6f")
+
+            if progressBar:
+                progressBar.setValue(int(100 * (i + 1) / total))
+
+        except Exception as e:
+            print(f"Erreur sur {path} : {e}")
+
+    print("Indexation MobileNet terminée !!!")
+
+
+def extractReqFeatures(fileName, algo_choice, model=None, transform=None, device=None):
     print(algo_choice)
     if fileName:
         img = cv2.imread(fileName)
-        resized_img = resize(img, (128 * 4, 64 * 4))
+        if img is None:
+            print(f"Erreur de lecture de l'image : {fileName}")
+            return None
 
         if algo_choice == 1:  # Couleurs
             histB = cv2.calcHist([img], [0], None, [256], [0, 256])
@@ -222,12 +270,67 @@ def extractReqFeatures(fileName, algo_choice):
         elif algo_choice == 3:  # SIFT
             sift = cv2.SIFT_create()  # cv2.xfeatures2d.SIFT_create() pour py < 3.4
             # Find the key point
-            kps, vect_features = sift.detectAndCompute(img, None)
+            _, vect_features = sift.detectAndCompute(img, None)
+            if vect_features is None:
+                vect_features = np.zeros((1,128))
 
         elif algo_choice == 4:  # ORB
             orb = cv2.ORB_create()
             # finding key points and descriptors of both images using detectAndCompute() function
-            key_point1, vect_features = orb.detectAndCompute(img, None)
+            _, vect_features = orb.detectAndCompute(img, None)
+            if vect_features is None:
+                vect_features = np.zeros((1,32))
+
+        elif algo_choice == 5:  # GLCM
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            gray = img_as_ubyte(gray)
+            distances = [1, -1]
+            angles = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+            glcmMatrix = greycomatrix(gray, distances=distances, angles=angles, normed=True)
+            glcmProperties = []
+            props = ['contrast', 'dissimilarity', 'homogeneity', 'energy', 'correlation', 'ASM']
+            for prop in props:
+                glcmProperties.append(greycoprops(glcmMatrix, prop).ravel())
+            vect_features = np.concatenate(glcmProperties, axis=None)
+
+        elif algo_choice == 6:  # LBP
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            img_resized = cv2.resize(gray, (350, 350))
+            points, radius = 8, 1
+            method = 'default'
+            subSize = (70, 70)
+            lbp_matrix = local_binary_pattern(img_resized, points, radius, method)
+            histograms = []
+            for k in range(int(lbp_matrix.shape[0] / subSize[0])):
+                for j in range(int(lbp_matrix.shape[1] / subSize[1])):
+                    subVector = lbp_matrix[k * subSize[0]:(k + 1) * subSize[0],
+                                           j * subSize[1]:(j + 1) * subSize[1]].ravel()
+                    subHist, _ = np.histogram(subVector, bins=int(2 ** points), range=(0, 2 ** points))
+                    histograms = np.concatenate((histograms, subHist), axis=None)
+            vect_features = histograms
+
+        elif algo_choice == 7:  # HOG
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            resized = cv2.resize(gray, (128, 128))
+            vect_features, _ = hog(resized,
+                                   orientations=9,
+                                   pixels_per_cell=(8, 8),
+                                   cells_per_block=(2, 2),
+                                   block_norm='L2-Hys',
+                                   visualize=True,
+                                   feature_vector=True)
+            
+        elif algo_choice == 8:  # MobileNetV2
+            if model is None or transform is None or device is None:
+                raise ValueError("Model, transform, and device must be provided for MobileNet feature extraction.")
+            image_pil = Image.open(fileName).convert("RGB")
+            tensor = transform(image_pil).unsqueeze(0).to(device)
+            with torch.no_grad():
+                features = model(tensor)
+            vect_features = features.cpu().numpy().squeeze()
+
+        else:
+            raise ValueError(f"Descripteur inconnu: {algo_choice}")
 
         np.savetxt("Methode_" + str(algo_choice) + "_requete.txt", vect_features)
         print("saved")

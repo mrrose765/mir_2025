@@ -8,7 +8,8 @@ import cv2
 import distances as d
 import matplotlib.pyplot as plt
 from metrics import precision_at_k, recall, average_precision, r_precision, mean_average_precision
-
+import torch
+from torchvision import models, transforms
 
 class TabRechercheController:
     def __init__(self, main_app):
@@ -22,6 +23,21 @@ class TabRechercheController:
         self.ui.chercher.clicked.connect(self.Recherche)
         self.ui.calcul_RP.clicked.connect(self.rappel_precision)
         self.ui.pushButton.clicked.connect(self.afficher_metriques)
+
+
+        # Chargement du modèle MobileNet
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.mobilenet_model = models.mobilenet_v2(pretrained=True)
+        self.mobilenet_model.classifier = torch.nn.Identity()
+        self.mobilenet_model.eval()
+        self.mobilenet_model.to(self.device)
+
+        self.mobilenet_transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225])
+        ])
 
 
     def OuvrirImage(self):
@@ -64,8 +80,8 @@ class TabRechercheController:
         elif self.ui.checkBox_HOG_rech.isChecked():
             folder_model += '/HOG'
             self.algo_choice = 7
-        elif self.ui.checkBox_Moments_rech.isChecked():
-            folder_model += '/MOMENTS'
+        elif self.ui.checkBox_MobileNet_rech.isChecked():
+            folder_model += '/MobileNet'
             self.algo_choice = 8
         else:
             print("Merci de sélectionner un descripteur")
@@ -77,9 +93,12 @@ class TabRechercheController:
             self.ui.gridLayout.itemAt(i).widget().setParent(None)
 
         # Mise à jour des distances
-        if self.algo_choice in [3, 4, 5, 6, 7, 8]:
+        if self.algo_choice in [3, 4, 5, 6, 7]:
             self.ui.comboBox.clear()
             self.ui.comboBox.addItems(["Brute force", "Flann"])
+        elif self.algo_choice == 8:
+            self.ui.comboBox.clear()
+            self.ui.comboBox.addItems(["Euclidienne", "Similarité cosinus"])
         else:
             self.ui.comboBox.clear()
             self.ui.comboBox.addItems(["Euclidienne", "Correlation", "Chi carre", "Intersection", "Bhattacharyya"])
@@ -143,7 +162,10 @@ class TabRechercheController:
         start_time = time.time()
         print("Extraction descripteur image requête...")
 
-        req = f.extractReqFeatures(self.fileName, self.algo_choice)
+        req = f.extractReqFeatures(self.fileName, self.algo_choice,
+                           model=self.mobilenet_model,
+                           transform=self.mobilenet_transform,
+                           device=self.device)
         self.sortie = int(self.ui.comboBox_top.currentText())
         distanceName = self.ui.comboBox.currentText()
 
@@ -268,14 +290,29 @@ class TabRechercheController:
         # Classe de l'image requête (à partir du nom)
         classe_requete = "_".join(filename_req.split("_")[2:4])  # e.g., 'araignees_tarantula'
 
+        self.all_image_names = []
+        extensions_images = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff')
+        for root, dirs, files in os.walk(self.ui.image_folder):
+            for file in files:
+                if file.lower().endswith(extensions_images):
+                    self.all_image_names.append(file)
+
         # Images pertinentes = celles de la même classe
         relevant = [
-            img for img in self.nom_image_plus_proches
+            img for img in self.all_image_names
             if "_".join(img.split("_")[2:4]) == classe_requete
         ]
 
         # Liste des résultats retournés
         retrieved = self.nom_image_plus_proches
+
+        print("RETRIEVED ______________")
+        for img in retrieved:
+            print(img)
+
+        print("RELEVANT _______________")
+        for img in relevant:
+            print(img)
 
         # k = nombre de résultats
         k = len(retrieved)

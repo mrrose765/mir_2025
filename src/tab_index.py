@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
 import os
 import functions as f
-
+import time
 
 
 class TabIndexController:
@@ -70,7 +70,7 @@ class TabIndexController:
         if not (self.ui.checkBox_HistC_index.isChecked() or self.ui.checkBox_HSV_index.isChecked() or
                 self.ui.checkBox_SIFT_index.isChecked() or self.ui.checkBox_ORB_index.isChecked() or
                 self.ui.checkBox_GLCM_index.isChecked() or self.ui.checkBox_LBP_index.isChecked() or
-                self.ui.checkBox_HOG_index.isChecked()):
+                self.ui.checkBox_HOG_index.isChecked() or self.ui.checkBox_MobileNet_index.isChecked()):
             print("Merci de sélectionner un descripteur via le menu ...")
             f.showDialog()
             return
@@ -78,24 +78,43 @@ class TabIndexController:
 
         # Exécute les descripteurs cochés
         if self.ui.checkBox_HistC_index.isChecked():
+            t0 = time.time()
             f.generateHistogramme_Color(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur Histogramme Couleur terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_HSV_index.isChecked():
+            t0 = time.time()
             f.generateHistogramme_HSV(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur HSV terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_SIFT_index.isChecked():
+            t0 = time.time()
             f.generateSIFT(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur SIFT terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_ORB_index.isChecked():
+            t0 = time.time()
             f.generateORB(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur ORB terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_GLCM_index.isChecked():
+            t0 = time.time()
             f.generateGLCM(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur GLCM terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_LBP_index.isChecked():
+            t0 = time.time()
             f.generateLBP(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur LBP terminé en {time.time() - t0:.2f} s")
 
         if self.ui.checkBox_HOG_index.isChecked():
+            t0 = time.time()
             f.generateHOG(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur HOG terminé en {time.time() - t0:.2f} s")
+
+        if self.ui.checkBox_MobileNet_index.isChecked():
+            t0 = time.time()
+            f.generateMobileNetFeatures(image_features_folder, self.list_images_index, self.ui.progressBar)
+            print(f"Descripteur MobileNet terminé en {time.time() - t0:.2f} s")
 
         print("Indexation terminée.")

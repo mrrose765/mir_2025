@@ -74,6 +74,8 @@ def distance_f(l1, l2, distanceName):
         distance = bruteForceMatching(l1, l2)
     elif distanceName == "Flann":
         distance = flann(l1, l2)
+    elif distanceName == "Similarité cosinus":
+        distance = cosine_distance(l1,l2)
     return distance
 
 
