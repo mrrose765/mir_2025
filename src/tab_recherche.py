@@ -16,7 +16,7 @@ class TabRechercheController:
         self.ui = main_app
 
         # Liens des boutons pour recherche
-        self.ui.comboBox_top.addItems(["20", "50"])
+        self.ui.comboBox_top.addItems(["20", "50", "100"])
         self.ui.quitter_rech.clicked.connect(self.ui.Quitter)
         self.ui.charger_rech.clicked.connect(self.OuvrirImage)
         self.ui.charger_desc.clicked.connect(self.loadFeatures)
@@ -38,6 +38,13 @@ class TabRechercheController:
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
                          std=[0.229, 0.224, 0.225])
         ])
+
+        self.all_image_names = []
+        extensions_images = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff')
+        for root, dirs, files in os.walk(self.ui.image_folder):
+            for file in files:
+                if file.lower().endswith(extensions_images):
+                    self.all_image_names.append(file)
 
 
     def OuvrirImage(self):
@@ -235,7 +242,10 @@ class TabRechercheController:
             else:
                 rappel_precision.append(0)
 
-        total_pertinents = sum(rappel_precision)
+        total_pertinents = sum(
+            1 for img in self.all_image_names
+            if "_".join(img.split("_")[2:4]) == classe_image_requete
+        )
 
         for i in range(self.sortie):
             val = sum(rappel_precision[:i + 1])
@@ -289,13 +299,6 @@ class TabRechercheController:
 
         # Classe de l'image requête (à partir du nom)
         classe_requete = "_".join(filename_req.split("_")[2:4])  # e.g., 'araignees_tarantula'
-
-        self.all_image_names = []
-        extensions_images = ('.jpg', '.jpeg', '.png', '.bmp', '.gif', '.tif', '.tiff')
-        for root, dirs, files in os.walk(self.ui.image_folder):
-            for file in files:
-                if file.lower().endswith(extensions_images):
-                    self.all_image_names.append(file)
 
         # Images pertinentes = celles de la même classe
         relevant = [
