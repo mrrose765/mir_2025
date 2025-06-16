@@ -344,8 +344,8 @@ class TabRechercheController:
         # Affichage
         texte = f"""\
         Précision@{k} : {p_at_k:.3f}
-        Rappel : {rec:.3f} ({len(relevant)} pertinentes pour la classe)
-        Moyenne Précision : {ap:.3f}
+        Rappel : {rec:.3f} ({len(relevant)} TopMax)
+        Average Précision@{k} : {ap:.3f}
         R-Précision : {rprec:.3f}
         """
 
