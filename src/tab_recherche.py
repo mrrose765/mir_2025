@@ -1,15 +1,18 @@
-from PyQt5 import QtWidgets, QtCore, QtGui
-import os
-import functions as f
-import time
-import numpy as np
 import math
+import os
+import time
+
 import cv2
-import distances as d
 import matplotlib.pyplot as plt
-from metrics import precision_at_k, recall, average_precision, r_precision, mean_average_precision
+import numpy as np
 import torch
+from PyQt5 import QtWidgets, QtCore, QtGui
 from torchvision import models, transforms
+
+import distances as d
+import functions as f
+from metrics import precision_at_k, recall, average_precision, r_precision
+
 
 class TabRechercheController:
     def __init__(self, main_app):
@@ -24,7 +27,6 @@ class TabRechercheController:
         self.ui.calcul_RP.clicked.connect(self.rappel_precision)
         self.ui.pushButton.clicked.connect(self.afficher_metriques)
 
-
         # Chargement du modèle MobileNet
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.mobilenet_model = models.mobilenet_v2(pretrained=True)
@@ -36,7 +38,7 @@ class TabRechercheController:
             transforms.Resize((224, 224)),
             transforms.ToTensor(),
             transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225])
+                                 std=[0.229, 0.224, 0.225])
         ])
 
         self.all_image_names = []
@@ -45,11 +47,10 @@ class TabRechercheController:
             for file in files:
                 if file.lower().endswith(extensions_images):
                     self.all_image_names.append(file)
-                    
+
         # Attributs utilisés
         self.fileName = None
         self.features1 = []
-
 
     def OuvrirImage(self):
         self.fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -67,7 +68,7 @@ class TabRechercheController:
     def loadFeatures(self):
 
         self.algo_choice = 0
-        folder_model = self.ui.features_folder  + "/image_features"
+        folder_model = self.ui.features_folder + "/image_features"
 
         # Sélection du dossier selon le descripteur
         if self.ui.checkBox_HistC_rech.isChecked():
@@ -146,7 +147,8 @@ class TabRechercheController:
 
         if total_files != total_images:
             # Toutes les images n'ont pas de descripteur
-            self.ui.show_error("Erreur dans le chargement des descripteurs", "Le nombre de descripteurs ne correspond pas au nombre d'images dans la base de données. Veuillez réindexer la base de données.")
+            self.ui.show_error("Erreur dans le chargement des descripteurs",
+                               "Le nombre de descripteurs ne correspond pas au nombre d'images dans la base de données. Veuillez réindexer la base de données.")
             return
 
         for txt_path in all_txt:
@@ -183,14 +185,15 @@ class TabRechercheController:
 
         try:
             req = f.extractReqFeatures(self.fileName, self.algo_choice,
-                               model=self.mobilenet_model,
-                               transform=self.mobilenet_transform,
-                               device=self.device)
+                                       model=self.mobilenet_model,
+                                       transform=self.mobilenet_transform,
+                                       device=self.device)
         except ValueError as val_error:
             self.ui.show_error("Erreur", str(val_error))
             return
         except FileNotFoundError as fnf_error:
-            self.ui.show_error("Erreur", str(fnf_error) + "\nPour le modèle ViT, veuillez utiliser uniquement les images de la base de données imgDB.")
+            self.ui.show_error("Erreur",
+                               str(fnf_error) + "\nPour le modèle ViT, veuillez utiliser uniquement les images de la base de données imgDB.")
             return
 
         self.sortie = int(self.ui.comboBox_top.currentText())
@@ -329,14 +332,6 @@ class TabRechercheController:
         # Liste des résultats retournés
         retrieved = self.nom_image_plus_proches
 
-        print("RETRIEVED ______________")
-        for img in retrieved:
-            print(img)
-
-        print("RELEVANT _______________")
-        for img in relevant:
-            print(img)
-
         # k = nombre de résultats
         k = len(retrieved)
 
@@ -345,14 +340,13 @@ class TabRechercheController:
         rec = recall(retrieved, relevant)
         ap = average_precision(retrieved, relevant)
         rprec = r_precision(retrieved, relevant)
-        map_ = mean_average_precision([retrieved], [relevant])
 
         # Affichage
         texte = f"""\
         Précision@{k} : {p_at_k:.3f}
-        Rappel : {rec:.3f}
+        Rappel : {rec:.3f} ({len(relevant)} pertinentes pour la classe)
         Moyenne Précision : {ap:.3f}
-        MAP : {map_:.3f}
-        R-Précision : {rprec:.3f}"""
+        R-Précision : {rprec:.3f}
+        """
 
         self.ui.label_metriques.setText(texte)

@@ -21,6 +21,3 @@ def r_precision(retrieved, relevant):
     retrieved_at_r = retrieved[:R]
     true_positives = sum([1 for item in retrieved_at_r if item in relevant])
     return true_positives / R if R > 0 else 0
-
-def mean_average_precision(all_retrieved, all_relevant):
-    return sum([average_precision(r, rel) for r, rel in zip(all_retrieved, all_relevant)]) / len(all_retrieved)
