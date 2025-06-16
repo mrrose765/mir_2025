@@ -428,7 +428,7 @@
      <widget class="QCheckBox" name="checkBox_HSV_rech">
       <property name="geometry">
        <rect>
-        <x>170</x>
+        <x>160</x>
         <y>50</y>
         <width>61</width>
         <height>16</height>
@@ -468,10 +468,10 @@
      <widget class="QCheckBox" name="checkBox_ORB_rech">
       <property name="geometry">
        <rect>
-        <x>170</x>
+        <x>160</x>
         <y>80</y>
         <width>71</width>
-        <height>16</height>
+        <height>20</height>
        </rect>
       </property>
       <property name="font">
@@ -1086,7 +1086,7 @@
      <widget class="QCheckBox" name="checkBox_MobileNet_rech">
       <property name="geometry">
        <rect>
-        <x>170</x>
+        <x>160</x>
         <y>110</y>
         <width>121</width>
         <height>16</height>
@@ -1100,7 +1100,27 @@
        </font>
       </property>
       <property name="text">
-       <string>MobileNet</string>
+       <string>MobNet</string>
+      </property>
+     </widget>
+     <widget class="QCheckBox" name="checkBox_ViT_rech">
+      <property name="geometry">
+       <rect>
+        <x>250</x>
+        <y>110</y>
+        <width>71</width>
+        <height>16</height>
+       </rect>
+      </property>
+      <property name="font">
+       <font>
+        <pointsize>11</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>ViT</string>
       </property>
      </widget>
     </widget>

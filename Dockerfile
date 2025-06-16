@@ -4,5 +4,4 @@ RUN apt-get install -y wget unzip
 
 WORKDIR /opt/project
 
-RUN pip install --no-cache-dir sentence-transformers
-RUN pip install --no-cache-dir torchvision
+RUN pip install --no-cache-dir sentence-transformers torchvision
