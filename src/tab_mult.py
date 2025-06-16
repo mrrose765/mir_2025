@@ -241,7 +241,11 @@ class TabMultimodalController:
 
         self.ui.label_metriques_mult.clear()
 
-        k = int(self.ui.comboBox_top_mult.currentText())
+        k = self.ui.comboBox_top_mult.currentText()
+        if not k.isdigit():
+            k = self.number_per_class[extract_class(os.path.splitext(os.path.basename(self.file_name))[0])]
+        else:
+            k = int(k)
         neighbors = []
         if self.chosen_mode == 0:
             neighbors = self._text_search(k)
