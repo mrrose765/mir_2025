@@ -329,6 +329,15 @@ def extractReqFeatures(fileName, algo_choice, model=None, transform=None, device
                 features = model(tensor)
             vect_features = features.cpu().numpy().squeeze()
 
+        elif algo_choice == 9:  # ViT-21k
+            # In this case, we can only use the images from the database. (Already indexed)
+            # Load features from the indexed files
+            features_path = "features/image_features/ViT-21k/"
+            image_name = os.path.splitext(os.path.basename(fileName))[0] + ".txt"
+            full_path = os.path.join(features_path, image_name)
+            if not os.path.exists(full_path):
+                raise FileNotFoundError(f"Le fichier de caractéristiques pour l'image {fileName} n'existe pas dans la base de données.")
+            vect_features = np.loadtxt(full_path)
         else:
             raise ValueError(f"Descripteur inconnu: {algo_choice}")
 

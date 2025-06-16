@@ -39,6 +39,10 @@ class TabRechercheController:
                          std=[0.229, 0.224, 0.225])
         ])
 
+        # Attributs utilisés
+        self.fileName = None
+        self.features1 = []
+
 
     def OuvrirImage(self):
         self.fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -83,9 +87,11 @@ class TabRechercheController:
         elif self.ui.checkBox_MobileNet_rech.isChecked():
             folder_model += '/MobileNet'
             self.algo_choice = 8
+        elif self.ui.checkBox_ViT_rech.isChecked():
+            folder_model += '/ViT-21k'
+            self.algo_choice = 9
         else:
-            print("Merci de sélectionner un descripteur")
-            self.ui.showDialog()
+            self.ui.show_error("Erreur", "Veuillez sélectionner un descripteur.")
             return
 
         # Nettoyer la grille d'affichage
@@ -96,7 +102,7 @@ class TabRechercheController:
         if self.algo_choice in [3, 4, 5, 6, 7]:
             self.ui.comboBox.clear()
             self.ui.comboBox.addItems(["Brute force", "Flann"])
-        elif self.algo_choice == 8:
+        elif self.algo_choice in [8, 9]:
             self.ui.comboBox.clear()
             self.ui.comboBox.addItems(["Euclidienne", "Similarité cosinus"])
         else:
@@ -104,8 +110,8 @@ class TabRechercheController:
             self.ui.comboBox.addItems(["Euclidienne", "Correlation", "Chi carre", "Intersection", "Bhattacharyya"])
 
         # Vérification image requête
-        if not self.fileName:
-            print("Merci de charger une image avec le bouton Ouvrir")
+        if self.fileName is None:
+            self.ui.show_error("Erreur", "Veuillez d'abord sélectionner une image requête.")
             return
 
         # Chargement
@@ -129,6 +135,12 @@ class TabRechercheController:
                     all_txt.append(os.path.join(root, file))
 
         total_files = len(all_txt)
+        total_images = len(image_index)
+
+        if total_files != total_images:
+            # Toutes les images n'ont pas de descripteur
+            self.ui.show_error("Erreur dans le chargement des descripteurs", "Le nombre de descripteurs ne correspond pas au nombre d'images dans la base de données. Veuillez réindexer la base de données.")
+            return
 
         for txt_path in all_txt:
             feature = np.loadtxt(txt_path)
@@ -150,8 +162,8 @@ class TabRechercheController:
         for i in reversed(range(self.ui.gridLayout.count())):
             self.ui.gridLayout.itemAt(i).widget().setParent(None)
 
-        if self.algo_choice == 0:
-            print("Il faut choisir une méthode !")
+        if self.algo_choice == 0 or len(self.features1) == 0:
+            self.ui.show_error("Erreur", "Veuillez d'abord charger les descripteurs.")
             return
 
         print(f"[Recherche] Image en mémoire : {getattr(self, 'fileName', 'Non définie')}")
@@ -162,10 +174,18 @@ class TabRechercheController:
         start_time = time.time()
         print("Extraction descripteur image requête...")
 
-        req = f.extractReqFeatures(self.fileName, self.algo_choice,
-                           model=self.mobilenet_model,
-                           transform=self.mobilenet_transform,
-                           device=self.device)
+        try:
+            req = f.extractReqFeatures(self.fileName, self.algo_choice,
+                               model=self.mobilenet_model,
+                               transform=self.mobilenet_transform,
+                               device=self.device)
+        except ValueError as val_error:
+            self.ui.show_error("Erreur", str(val_error))
+            return
+        except FileNotFoundError as fnf_error:
+            self.ui.show_error("Erreur", str(fnf_error) + "\nPour le modèle ViT, veuillez utiliser uniquement les images de la base de données imgDB.")
+            return
+
         self.sortie = int(self.ui.comboBox_top.currentText())
         distanceName = self.ui.comboBox.currentText()
 

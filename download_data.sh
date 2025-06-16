@@ -3,7 +3,8 @@
 # Clear existing data
 echo "Cleaning up existing data..."
 rm -rf src/imgDB
-rm -rf src/features
+rm -rf src/features/image_features/ViT-21k
+rm -rf src/features/text_features
 echo "Cleanup complete."
 
 
