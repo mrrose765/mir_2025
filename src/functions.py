@@ -341,8 +341,8 @@ def extractReqFeatures(fileName, algo_choice, model=None, transform=None, device
         else:
             raise ValueError(f"Descripteur inconnu: {algo_choice}")
 
-        np.savetxt("Methode_" + str(algo_choice) + "_requete.txt", vect_features)
-        print("saved")
+        # np.savetxt("Methode_" + str(algo_choice) + "_requete.txt", vect_features)
+        # print("saved")
         # print("vect_features", vect_features)
         return vect_features
 

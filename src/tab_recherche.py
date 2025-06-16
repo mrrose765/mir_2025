@@ -19,7 +19,7 @@ class TabRechercheController:
         self.ui = main_app
 
         # Liens des boutons pour recherche
-        self.ui.comboBox_top.addItems(["20", "50", "100"])
+        self.ui.comboBox_top.addItems(["20", "50", "100", "MAX"])
         self.ui.quitter_rech.clicked.connect(self.ui.Quitter)
         self.ui.charger_rech.clicked.connect(self.OuvrirImage)
         self.ui.charger_desc.clicked.connect(self.loadFeatures)
@@ -51,6 +51,7 @@ class TabRechercheController:
         # Attributs utilisés
         self.fileName = None
         self.features1 = []
+        self.class_count = {}
 
     def OuvrirImage(self):
         self.fileName, _ = QtWidgets.QFileDialog.getOpenFileName(
@@ -131,9 +132,12 @@ class TabRechercheController:
         # Construire un index de toutes les images dans imgDB
         image_index = {}
         for root, _, files in os.walk(self.ui.image_folder):
-            for f in files:
-                if f.lower().endswith((".jpg", ".jpeg", ".png")):
-                    image_index[os.path.splitext(f)[0]] = os.path.join(root, f)
+            for file in files:
+                if file.lower().endswith((".jpg", ".jpeg", ".png")):
+                    image_index[os.path.splitext(file)[0]] = os.path.join(root, file)
+                    self.class_count[f.extract_class(os.path.splitext(file)[0])] = self.class_count.get(
+                        f.extract_class(os.path.splitext(file)[0]), 0) + 1
+
 
         # Charger les features en cherchant l'image correspondante dans l'index
         all_txt = []
@@ -167,6 +171,8 @@ class TabRechercheController:
         end_time = time.time()
         print(f"Temps de chargement du descripteur {folder_model} : {end_time - start_time:.4f} secondes")
 
+        print(self.class_count)
+
     def Recherche(self):
         for i in reversed(range(self.ui.gridLayout.count())):
             self.ui.gridLayout.itemAt(i).widget().setParent(None)
@@ -196,7 +202,11 @@ class TabRechercheController:
                                str(fnf_error) + "\nPour le modèle ViT, veuillez utiliser uniquement les images de la base de données imgDB.")
             return
 
-        self.sortie = int(self.ui.comboBox_top.currentText())
+        self.sortie = self.ui.comboBox_top.currentText()
+        if self.sortie == "MAX":
+            self.sortie = self.class_count[f.extract_class(os.path.basename(self.fileName))]
+        else:
+            self.sortie = int(self.sortie)
         distanceName = self.ui.comboBox.currentText()
 
         voisins = d.getkVoisins(self.features1, req, self.sortie, distanceName)
